@@ -28,7 +28,10 @@ func PostLinkHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
+	if l.Scope == "" {
 	l.Scope = "global"
+	}
+
 	l.User = "arman"
 
 	log.Debug("74532::Connecting to Redis")

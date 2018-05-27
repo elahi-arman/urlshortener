@@ -22,5 +22,9 @@ func main() {
 	}
 
 	var appConfigFile = shortlyHome + "/config/config.yaml"
-	server.StartServer(appConfigFile)
+	err := server.StartServer(appConfigFile, shortlyHome)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(2)
+	}
 }

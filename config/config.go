@@ -3,6 +3,8 @@ package config
 import (
 	"io/ioutil"
 
+	"go.uber.org/zap"
+
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -13,14 +15,16 @@ type RedisConfig struct {
 
 //ServerConfig defines the server config options
 type ServerConfig struct {
-	Address  string `yaml:"address"`
-	AuthFile string `yaml:"auth_file"`
+	Address   string `yaml:"address"`
+	AccessLog string `yaml:"access_log"`
+	ErrorLog  string `yaml:"error_log"`
 }
 
 //AppConfig holds all app configuration
 type AppConfig struct {
 	Redis  RedisConfig
 	Server ServerConfig
+	Log    zap.Config
 }
 
 // NewConfig loads the config file and returns the Config instance

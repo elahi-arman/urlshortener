@@ -4,6 +4,18 @@ server:
     # user - who owns the service
     user: shortly
 
+    # server logging configuration
+    access_log: logs/access.log
+    error_log: logs/error.log
+
 # redis configuration
 redis:
   address: localhost:6379
+
+log:
+  outputPaths: 
+    - logs/app.log
+  level: DEBUG
+  encoding: "json"
+  development: true
+      

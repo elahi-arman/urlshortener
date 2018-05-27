@@ -1,0 +1,9 @@
+server:
+    address: localhost:48290
+
+    # user - who owns the service
+    user: shortly
+
+# redis configuration
+redis:
+  address: localhost:6379

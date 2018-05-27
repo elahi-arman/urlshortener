@@ -5,7 +5,6 @@ import (
 
 	"github.com/elahi-arman/urlshortener/config"
 	"github.com/gomodule/redigo/redis"
-	log "github.com/sirupsen/logrus"
 )
 
 //RedisLinker defines a Linker for interfacting with Redis
@@ -17,7 +16,6 @@ type RedisLinker struct {
 func NewRedisLinker(cfg config.RedisConfig) (Linker, error) {
 	c, err := redis.Dial("tcp", cfg.Address)
 	if err != nil {
-		log.Error(fmt.Sprintf("74533::Could not connect to redis %e", err))
 		return nil, err
 	}
 
@@ -35,11 +33,9 @@ func (r *RedisLinker) CommitLink(key string, l *Link) error {
 		"visits", l.Visits)
 
 	if err != nil {
-		log.Error(fmt.Sprintf("95670::REDIS ERROR: %e", err))
 		return err
 	}
 
-	log.Info(fmt.Sprintf("95671::Committed link %#v", l))
 	return nil
 }
 
@@ -49,7 +45,6 @@ func (r *RedisLinker) GetLink(scope string, user string, title string) (*Link, e
 	hash, err := redis.Values(r.conn.Do("HGETALL", fmt.Sprintf("link:%s:%s:%s", scope, user, title)))
 
 	if err != nil {
-		log.Errorf("41231::REDIS ERROR: %e", err)
 		return nil, err
 	}
 
@@ -57,7 +52,6 @@ func (r *RedisLinker) GetLink(scope string, user string, title string) (*Link, e
 	link.User = user
 	link.Scope = scope
 	link.Title = title
-	log.Debugf("41233::Filled in user, scope, title values")
 
 	return link, nil
 
@@ -72,13 +66,11 @@ func (r *RedisLinker) GetLinksInScope(scope string) ([]Link, error) {
 
 		cursor, err := redis.Int64(values[0], err)
 		if err != nil {
-			log.Errorf("60234::REDIS ERROR with cursor: %e", err)
 			return l, err
 		}
 
 		hash, err := redis.Values(values[1], err)
 		if err != nil {
-			log.Errorf("60235::REDIS ERROR with latest hash: %#v %e", values[0], err)
 			return l, err
 		}
 
@@ -117,48 +109,39 @@ func bulkHashToLink(v []interface{}) *Link {
 		key, err := redis.String(v[i], nil)
 		value := v[i+1]
 		if err != nil {
-			log.Errorf("48716::Could not convert key to String %e", err)
 			continue
 		}
-
-		log.Debugf("48711::Trying to correlate %s %s", key, value)
 
 		switch key {
 
 		case "link":
 			link, err = redis.String(value, nil)
 			if err != nil {
-				log.Errorf("48712::Couldn't convert link to string: %e", err)
 				link = ""
 			}
 
 		case "date_modified":
 			dateModified, err = redis.Int64(value, nil)
 			if err != nil {
-				log.Errorf("48713::Couldn't convert date_modified to int64: %e", err)
 				dateModified = -1
 			}
 
 		case "date_created":
 			dateCreated, err = redis.Int64(value, nil)
 			if err != nil {
-				log.Errorf("48714::Couldn't convert date_created to int64: %e", err)
 				dateCreated = -1
 			}
 
 		case "visits":
 			visits, err = redis.Int64(value, nil)
 			if err != nil {
-				log.Errorf("48713::Couldn't convert date_modified to int64: %e", err)
 				visits = -1
 			}
 
 		default:
-			log.Warn("48715::Could not correlate last key value pair")
 		}
 	}
 
-	log.Infof("48714::Returning Link {link:%s, dateModified:%d, dateCreated:%d, visits:%d}", link, dateModified, dateCreated, visits)
 	return &Link{
 		User:         "",
 		Link:         link,

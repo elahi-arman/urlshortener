@@ -3,6 +3,8 @@ package model
 import (
 	"fmt"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 // Link represents a Link in the system
@@ -22,20 +24,50 @@ func (l *Link) key() string {
 }
 
 // Commit saves this Link to a Redis connection
-func (l *Link) Commit(linker Linker) error {
+func (l *Link) Commit(s ServerContext, log *zap.SugaredLogger) error {
 	key := l.key()
 	l.DateModified = time.Now().Unix()
-	return linker.CommitLink(key, l)
+	return s.linker.CommitLink(key, l)
 }
 
 // Visit increments the counter for the number of visits
-func (l *Link) Visit(linker Linker) error {
+func (l *Link) Visit(s ServerContext, log *zap.SugaredLogger) error {
 	l.Visits++
 	key := l.key()
-	return linker.CommitLink(key, l)
+	return s.linker.CommitLink(key, l)
 }
 
 // GetLink obtains a Link hash from Redis
-func GetLink(linker Linker, scope string, user string, title string) (*Link, error) {
-	return linker.GetLink(scope, user, title)
+func GetLink(s ServerContext, scope string, user string, title string) (*Link, error) {
+	return s.linker.GetLink(scope, user, title)
+}
+
+// SearchForLink looks in a user's personal scope and then the global scope for link
+func SearchForLink(s ServerContext, user string, title string) (*Link, error) {
+
+	var (
+		pLink *Link
+		pErr  error
+		gLink *Link
+		gErr  error
+	)
+
+	// TODO: this should be optimized to buffer the calls
+	pLink, pErr = GetLink(s, "personal", user, title)
+	gLink, gErr = GetLink(s, "global", user, title)
+
+	if pErr == nil {
+		return pLink, nil
+	}
+
+	if _, ok := pErr.(NotFoundError); !ok {
+		return nil, pErr
+	}
+
+	if gErr == nil {
+		return gLink, nil
+	}
+
+	return nil, gErr
+
 }

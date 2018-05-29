@@ -1,0 +1,1 @@
+normal_user:fakepassword:scope1,scope2

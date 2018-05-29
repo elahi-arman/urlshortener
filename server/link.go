@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -16,19 +17,10 @@ func (s *server) postLink() httprouter.Handle {
 func (s *server) link() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
-		scope := ps.ByName("scope")
-		user := ps.ByName("user")
-		title := ps.ByName("title")
+		link := ps.ByName("link")
+		w.Write([]byte(fmt.Sprintf("retrieving closest link (%s)", link)))
 
-		if user != "" {
-			if title != "" {
-				s.linker.GetLink(scope, user, title)
-			} else {
-				s.linker.GetLinksByUser(user)
-			}
-		} else {
-			s.linker.GetLinksInScope(scope)
-		}
+		w.WriteHeader(200)
 		return
 	}
 

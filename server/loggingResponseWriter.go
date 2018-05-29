@@ -33,7 +33,6 @@ func (lw *loggingResponseWriter) WriteResponse(status int, logCode string, logMs
 func (s *server) requestLogger(h httprouter.Handle) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
-		// in case handler doesn't call WriteHeader
 		lw := loggingResponseWriter{
 			w,
 			ksuid.New().String(),

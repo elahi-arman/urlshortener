@@ -11,6 +11,7 @@ import (
 //RedisConfig defines the config options for a Redis instance
 type RedisConfig struct {
 	Address string `yaml:"address"`
+	Retries int    `yaml:"retries"`
 }
 
 //ServerConfig defines the server config options

@@ -11,6 +11,7 @@ server:
 # redis configuration
 redis:
   address: localhost:6379
+  retries: 10
 
 log:
   outputPaths: 

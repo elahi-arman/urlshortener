@@ -3,8 +3,6 @@ package model
 import (
 	"fmt"
 	"time"
-
-	"go.uber.org/zap"
 )
 
 // Link represents a Link in the system
@@ -24,50 +22,56 @@ func (l *Link) key() string {
 }
 
 // Commit saves this Link to a Redis connection
-func (l *Link) Commit(s ServerContext, log *zap.SugaredLogger) error {
+func (l *Link) Commit(s ServerContext) error {
 	key := l.key()
 	l.DateModified = time.Now().Unix()
-	return s.linker.CommitLink(key, l)
+	s.Log.Debugf("%s Committing link with key %s", s.ID, key)
+	return s.Linker.CommitLink(key, l)
 }
 
 // Visit increments the counter for the number of visits
-func (l *Link) Visit(s ServerContext, log *zap.SugaredLogger) error {
+func (l *Link) Visit(s ServerContext) error {
 	l.Visits++
 	key := l.key()
-	return s.linker.CommitLink(key, l)
+	s.Log.Debugf("%s Visited link with key %s", s.ID, key)
+	return s.Linker.CommitLink(key, l)
 }
 
 // GetLink obtains a Link hash from Redis
 func GetLink(s ServerContext, scope string, user string, title string) (*Link, error) {
-	return s.linker.GetLink(scope, user, title)
+	s.Log.Debugf("%s Retrieving link with matching %s %s %s", s.ID, scope, user, title)
+	return s.Linker.GetLink(scope, user, title)
 }
 
 // SearchForLink looks in a user's personal scope and then the global scope for link
-func SearchForLink(s ServerContext, user string, title string) (*Link, error) {
+func SearchForLink(s ServerContext, scope string, title string) (*Link, error) {
 
 	var (
-		pLink *Link
-		pErr  error
+		sLink *Link
+		sErr  error
 		gLink *Link
 		gErr  error
 	)
 
-	// TODO: this should be optimized to buffer the calls
-	pLink, pErr = GetLink(s, "personal", user, title)
-	gLink, gErr = GetLink(s, "global", user, title)
+	sLink, sErr = GetLink(s, scope, "*", title)
+	gLink, gErr = GetLink(s, "global", "*", title)
 
-	if pErr == nil {
-		return pLink, nil
+	if sErr == nil {
+		s.Log.Debugf("%s Found link %s at %s scope, returning %#v", s.ID, title, scope, sLink)
+		return sLink, nil
 	}
 
-	if _, ok := pErr.(NotFoundError); !ok {
-		return nil, pErr
+	if _, ok := sErr.(NotFoundError); !ok {
+		s.Log.Errorw(s.ID, "error", sErr)
+		return nil, sErr
 	}
 
 	if gErr == nil {
+		s.Log.Debugf("%s Found link %s at global scope, returning %#v", s.ID, title, sLink)
 		return gLink, nil
 	}
 
+	s.Log.Errorw(s.ID, "error", gErr)
 	return nil, gErr
 
 }

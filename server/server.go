@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -24,6 +25,8 @@ type server struct {
 func StartServer(cfgPath string, home string) error {
 
 	var err error
+	var linker model.Linker
+
 	var s = new(server)
 
 	s.home = home
@@ -39,8 +42,21 @@ func StartServer(cfgPath string, home string) error {
 	s.appLog.Debugw("", "msg", "Finished router setup")
 
 	s.appLog.Debugw("", "msg", "Starting Linker setup")
-	linker, err := model.NewRedisLinker(s.cfg.Redis)
+
+	for i := 0; i < s.cfg.Redis.Retries; i++ {
+		s.appLog.Debugf("Trying to set up Redis, iteration %d", i)
+		linker, err = model.NewRedisLinker(s.cfg.Redis)
+		if err == nil {
+			break
+		}
+
+		time.Sleep(5 * time.Second)
+		s.appLog.Errorw("", "error", err)
+
+	}
+
 	if err != nil {
+		s.appLog.Errorw("", "error", err)
 		return err
 	}
 	s.linker = linker

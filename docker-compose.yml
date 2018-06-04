@@ -1,0 +1,27 @@
+version: '3'
+services:
+
+  # SHORTLY CONFIGURATION
+  shortly:
+    build: .
+    volumes:
+      - './logs:/opt/shortly/logs'
+      - './config:/opt/shortly/logs'
+    working_dir: /go/src/github.com/elahi-arman/urlshortener
+    # The process that runs in the container.
+    # Remeber, a container runs only ONE process.
+    command: 'node server.js'
+    # Set some environment variables to be used in the application
+    environment:
+      SHORTLY_HOME: '/opt/shortly'
+    entrypoint: '/go/bin/urlshortener'
+    ports:
+      - '48290:48290'
+    links:
+      - redis
+
+  # REDIS CONFIGURATION
+  redis:
+    image: redis
+    ports:
+      - '6379:6379'
